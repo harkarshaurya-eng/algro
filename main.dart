@@ -1,4 +1,5 @@
 import 'package:dartpractice/login.dart';
+import 'package:dartpractice/signup.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 void main() {
@@ -51,6 +52,7 @@ class HomePage extends StatelessWidget {
                  ),
                  Column(
                    children: <Widget>[
+                     //The login botton
                      MaterialButton(minWidth:double.infinity,
                        height: 60,
                        onPressed: () {
@@ -59,6 +61,36 @@ class HomePage extends StatelessWidget {
                        shape: RoundedRectangleBorder(
                          side: BorderSide(
                            color: Colors.black
+                         ),
+                            borderRadius: BorderRadius.circular(50)
+                       ),
+                       child:  Text(
+                         "Login",
+                         style:TextStyle(
+                           fontWeight: FontWeight.w600,
+                            fontSize: 18
+                         )
+                       ),
+                     ),
+                      //creating the signup botton
+                        SizedBox(height:20),
+                     MaterialButton(
+                       minWidth: double.infinity,
+                       height: 60,
+                       onPressed: (){
+                         Navigator.push(context, MaterialPageRoute(builder: (context) => SignUpPage()));
+                       },
+                       color: Color(0xff0095FF),
+                       shape: RoundedRectangleBorder(
+                         borderRadius: BorderRadius.circular(50)
+
+                       ),
+                       child: Text(
+                         "Sign Up",
+                         style: TextStyle(
+                           color: Colors.white,
+                           fontWeight: FontWeight.w600,
+                           fontSize: 18
                          )
                        )
                      )
