@@ -1,0 +1,221 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    intcblock 0 1 32 1000
+    bytecblock "buyer" "seller" "arbiter"
+    // smart_contracts/hello_world/contract.py:3-4
+    // # 👇 WE RENAMED THIS BACK TO "HelloWorld" TO SATISFY THE SYSTEM
+    // class HelloWorld(ARC4Contract):
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    bz main_create_NoOp@6
+    pushbytess 0xe94a444d 0xe0340cd1 // method "release_funds()void", method "refund_buyer()void"
+    txna ApplicationArgs 0
+    match release_funds refund_buyer
+    err
+
+main_create_NoOp@6:
+    // smart_contracts/hello_world/contract.py:3-4
+    // # 👇 WE RENAMED THIS BACK TO "HelloWorld" TO SATISFY THE SYSTEM
+    // class HelloWorld(ARC4Contract):
+    pushbytes 0xbb177320 // method "create_application(address,address)void"
+    txna ApplicationArgs 0
+    match create_application
+    err
+
+
+// smart_contracts.hello_world.contract.HelloWorld.create_application[routing]() -> void:
+create_application:
+    // smart_contracts/hello_world/contract.py:14
+    // @arc4.abimethod(allow_actions=["NoOp"], create="require")
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    txna ApplicationArgs 2
+    dup
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // smart_contracts/hello_world/contract.py:16
+    // self.buyer = Txn.sender
+    bytec_0 // "buyer"
+    txn Sender
+    app_global_put
+    // smart_contracts/hello_world/contract.py:17
+    // self.seller = seller
+    bytec_1 // "seller"
+    uncover 2
+    app_global_put
+    // smart_contracts/hello_world/contract.py:18
+    // self.arbiter = arbiter
+    bytec_2 // "arbiter"
+    swap
+    app_global_put
+    // smart_contracts/hello_world/contract.py:14
+    // @arc4.abimethod(allow_actions=["NoOp"], create="require")
+    intc_1 // 1
+    return
+
+
+// smart_contracts.hello_world.contract.HelloWorld.release_funds[routing]() -> void:
+release_funds:
+    // smart_contracts/hello_world/contract.py:22-23
+    // # Check that only the Buyer or Arbiter can do this
+    // assert Txn.sender == self.buyer or Txn.sender == self.arbiter, "Unauthorized"
+    txn Sender
+    intc_0 // 0
+    bytec_0 // "buyer"
+    app_global_get_ex
+    assert // check self.buyer exists
+    ==
+    bnz release_funds_bool_true@3
+    txn Sender
+    intc_0 // 0
+    bytec_2 // "arbiter"
+    app_global_get_ex
+    assert // check self.arbiter exists
+    ==
+    bz release_funds_bool_false@4
+
+release_funds_bool_true@3:
+    intc_1 // 1
+
+release_funds_bool_merge@5:
+    // smart_contracts/hello_world/contract.py:22-23
+    // # Check that only the Buyer or Arbiter can do this
+    // assert Txn.sender == self.buyer or Txn.sender == self.arbiter, "Unauthorized"
+    assert // Unauthorized
+    // smart_contracts/hello_world/contract.py:25-31
+    // # ✅ FORCE FEE: We set fee=1_000 (MicroAlgos) to pay for the transaction
+    // itxn.Payment(
+    //     receiver=self.seller,
+    //     amount=0,
+    //     close_remainder_to=self.seller,
+    //     fee=1_000
+    // ).submit()
+    itxn_begin
+    // smart_contracts/hello_world/contract.py:27
+    // receiver=self.seller,
+    intc_0 // 0
+    bytec_1 // "seller"
+    app_global_get_ex
+    assert // check self.seller exists
+    dup
+    itxn_field CloseRemainderTo
+    // smart_contracts/hello_world/contract.py:28
+    // amount=0,
+    intc_0 // 0
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/hello_world/contract.py:25-26
+    // # ✅ FORCE FEE: We set fee=1_000 (MicroAlgos) to pay for the transaction
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/hello_world/contract.py:30
+    // fee=1_000
+    intc_3 // 1000
+    itxn_field Fee
+    // smart_contracts/hello_world/contract.py:25-31
+    // # ✅ FORCE FEE: We set fee=1_000 (MicroAlgos) to pay for the transaction
+    // itxn.Payment(
+    //     receiver=self.seller,
+    //     amount=0,
+    //     close_remainder_to=self.seller,
+    //     fee=1_000
+    // ).submit()
+    itxn_submit
+    // smart_contracts/hello_world/contract.py:20
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+release_funds_bool_false@4:
+    intc_0 // 0
+    b release_funds_bool_merge@5
+
+
+// smart_contracts.hello_world.contract.HelloWorld.refund_buyer[routing]() -> void:
+refund_buyer:
+    // smart_contracts/hello_world/contract.py:35-36
+    // # Check that only the Seller or Arbiter can do this
+    // assert Txn.sender == self.arbiter or Txn.sender == self.seller, "Unauthorized"
+    txn Sender
+    intc_0 // 0
+    bytec_2 // "arbiter"
+    app_global_get_ex
+    assert // check self.arbiter exists
+    ==
+    bnz refund_buyer_bool_true@3
+    txn Sender
+    intc_0 // 0
+    bytec_1 // "seller"
+    app_global_get_ex
+    assert // check self.seller exists
+    ==
+    bz refund_buyer_bool_false@4
+
+refund_buyer_bool_true@3:
+    intc_1 // 1
+
+refund_buyer_bool_merge@5:
+    // smart_contracts/hello_world/contract.py:35-36
+    // # Check that only the Seller or Arbiter can do this
+    // assert Txn.sender == self.arbiter or Txn.sender == self.seller, "Unauthorized"
+    assert // Unauthorized
+    // smart_contracts/hello_world/contract.py:38-44
+    // # refund the buyer
+    // itxn.Payment(
+    //     receiver=self.buyer,
+    //     amount=0,
+    //     close_remainder_to=self.buyer,
+    //     fee=1_000
+    // ).submit()
+    itxn_begin
+    // smart_contracts/hello_world/contract.py:40
+    // receiver=self.buyer,
+    intc_0 // 0
+    bytec_0 // "buyer"
+    app_global_get_ex
+    assert // check self.buyer exists
+    dup
+    itxn_field CloseRemainderTo
+    // smart_contracts/hello_world/contract.py:41
+    // amount=0,
+    intc_0 // 0
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/hello_world/contract.py:38-39
+    // # refund the buyer
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/hello_world/contract.py:43
+    // fee=1_000
+    intc_3 // 1000
+    itxn_field Fee
+    // smart_contracts/hello_world/contract.py:38-44
+    // # refund the buyer
+    // itxn.Payment(
+    //     receiver=self.buyer,
+    //     amount=0,
+    //     close_remainder_to=self.buyer,
+    //     fee=1_000
+    // ).submit()
+    itxn_submit
+    // smart_contracts/hello_world/contract.py:33
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+refund_buyer_bool_false@4:
+    intc_0 // 0
+    b refund_buyer_bool_merge@5
